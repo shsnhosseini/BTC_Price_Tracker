@@ -1,6 +1,6 @@
 # BTC Price Tracker
 
-End-to-end cryptocurrency price tracking system: **API → SQL Server → Streamlit UI**
+End-to-end cryptocurrency price tracking system: **API → SQL Server → Streamlit UI + Docker**
 
 ## Architecture
 
