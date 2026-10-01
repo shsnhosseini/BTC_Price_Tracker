@@ -1,0 +1,83 @@
+services:
+  # Service 1: SQL Server Database
+  sqlServer:
+    # Use the official Microsoft SQL Server image
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    # Set the name of the container for easy identification
+    container_name: sqlServer
+    # Set the hostname inside the container
+    hostname: sqlServer
+    environment:
+      # Accept the Microsoft End User License Agreement (required for first run)
+      ACCEPT_EULA: Y
+      # Set the password for the 'sa' (system administrator) account
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+      # Specify the edition of SQL Server to use (Evaluation, Developer, Express, etc.)
+      MSSQL_PID: Evaluation
+    # Map port 1434 on the host to port 1433 in the container
+    ports:
+      - "1434:1433"
+    # Mount a named volume to persist SQL Server data (files, logs, etc.)
+    # This ensures data survives container restarts or removals
+    volumes:
+      - sql-volume:/var/opt/mssql
+    # Connect the container to the custom network defined below
+    networks:
+      - sql-network
+
+
+  # Service 2: Python Application (BTC Price Fetcher)
+  datacollector:
+    build: datacollector
+    # Set the container name
+    container_name: datacollector
+    # Connect to the same network so it can reach sqlServer
+    networks:
+      - sql-network
+    # Ensure the database container starts before this application
+    depends_on:
+      - sqlServer
+    environment:
+      - SQL_SERVER_HOST=sqlServer
+      - SQL_DATABASE=Cryptocurrency
+      - SQL_USERNAME=sa
+      - SA_PASSWORD=${SA_PASSWORD}
+      - SQL_PASSWORD=${SA_PASSWORD}
+      - SQL_PORT=1433
+
+
+  # Service 3: Web Interface
+  webinterface:
+    build: webinterface
+    container_name: webinterface
+    # Map port 8501 on the host to port 8501 in the container
+    # This allows users to access the web UI via http://localhost:8501
+    ports:
+      - "8501:8501"
+    # Connect to the same network to query the database
+    networks:
+      - sql-network
+    # Ensure the database is available before starting the web interface
+    depends_on:
+      - sqlServer
+    environment:
+      - SQL_SERVER_HOST=sqlServer
+      - SQL_DATABASE=Cryptocurrency
+      - SQL_USERNAME=sa
+      - SA_PASSWORD=${SA_PASSWORD}
+      - SQL_PASSWORD=${SA_PASSWORD}
+      - SQL_PORT=1433
+
+
+# Define the custom network
+networks:
+  sql-network:
+    # This network allows all three containers to communicate with each other
+    # using their service names as hostnames.
+
+
+# Define named volume for data persistence
+volumes:
+  sql-volume:
+    # This named volume persists the SQL Server data files
+    # Located at /var/opt/mssql inside the sqlServer container

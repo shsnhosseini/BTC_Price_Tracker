@@ -1,0 +1,12 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.Python
+.env
+!.env.example
+.vscode
+*.log
+docker-compose.yaml
+README.md
+alg.txt
